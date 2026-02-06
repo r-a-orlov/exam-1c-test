@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Тест (Руководитель): Расхождения при приеме товара (1С)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.35; }
+    .card { max-width: 980px; margin: 0 auto; border: 1px solid #ddd; border-radius: 12px; padding: 18px; }
+    h1 { font-size: 20px; margin: 0 0 10px; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 18px; }
+    input, select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+    .q { padding: 14px 0; border-top: 1px solid #eee; }
+    .q:first-of-type { border-top: none; }
+    .q-title { font-weight: 700; margin: 0 0 10px; }
+    .opt { display: block; padding: 8px 10px; border: 1px solid #eee; border-radius: 10px; margin: 8px 0; cursor: pointer; }
+    .opt:hover { background: #fafafa; }
+    .actions { display:flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #ccc; background: white; cursor: pointer; }
+    button.primary { background: #111; color: #fff; border-color: #111; }
+    .status { margin-top: 12px; font-size: 14px; }
+    .muted { color:#666; }
+    .hidden { display:none; }
+    .result { padding: 12px; border-radius: 12px; background:#f7f7f7; margin-top: 14px; }
+    .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; background:#eee; font-size: 12px; margin-left: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Тест (Руководитель) <span class="badge">25 вопросов</span></h1>
+    <div class="muted">Вопросы включают кейсы контроля подтверждений/инвентаризаций. Итоги сохраняются в таблицу.</div>
+
+    <div class="meta">
+      <div>
+        <label>ФИО</label>
+        <input id="name" placeholder="Например: Иванов Иван" />
+      </div>
+      <div>
+        <label>Роль</label>
+        <select id="role">
+          <option value="">Выберите…</option>
+          <option>Руководитель / старший смены</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="quiz"></div>
+
+    <div class="actions">
+      <button id="btnCheck">Проверить (локально)</button>
+      <button class="primary" id="btnSubmit">Отправить результат</button>
+      <button id="btnReset">Сбросить</button>
+    </div>
+
+    <div class="status" id="status"></div>
+    <div class="result hidden" id="resultBox"></div>
+  </div>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbziYMZkxWnhZiAiHkPr4-TidgzpyR0y5V9ToVXus-CnQfSD_qKGXWCHGDHRK55Fyl-W/exec";
+  const TEST_TYPE = "MANAGER";
+
+  const QUESTIONS = [
+    { id: 1, text: "Какой корректный путь в 1С к обработке расхождений?",
+      options: [
+        "Склад и логистика → Листы разногласий → Обработка расхождений при приеме товара",
+        "Продажи → Возвраты → Обработка расхождений",
+        "Финансы → Инвентаризация → Расхождения",
+        "Закупки → Поставщики → Разногласия"
+      ], correct: 0
+    },
+    { id: 2, text: "Какие поля критичны для отбора перед формированием списка?",
+      options: [
+        "Отправитель и Получатели",
+        "Касса и Смена",
+        "Цена и Скидка",
+        "Поставщик и Договор"
+      ], correct: 0
+    },
+    { id: 3, text: "Что означает «Заявлено» (красное с минусом)?",
+      options: [
+        "Недоезд: не дождались указанного количества",
+        "Переизбыток",
+        "Брак",
+        "Уценка"
+      ], correct: 0
+    },
+    { id: 4, text: "Что означает «Заявлено» (синее значение)?",
+      options: [
+        "Лишний товар (переизбыток)",
+        "Недоезд",
+        "Резерв",
+        "Продажа"
+      ], correct: 0
+    },
+    { id: 5, text: "Кейс: у филиала А недоезд -2 по товару X, у филиала B лишний +2 по тому же товару X. Какую причину корректнее применить?",
+      options: [
+        "Выгружен на другом филиале",
+        "Микс",
+        "Лишний товар",
+        "Не погружен на отправителе"
+      ], correct: 0
+    },
+    { id: 6, text: "Кейс: при «Выгружен на другом филиале» какое действие обязательное в 1С?",
+      options: [
+        "Выбрать подтверждающий документ по связанному листу разногласий",
+        "Поставить только комментарий",
+        "Сделать уценку",
+        "Создать чек продажи"
+      ], correct: 0
+    },
+    { id: 7, text: "Кейс: почему система может запретить подтверждение «Выгружен на другом филиале»?",
+      options: [
+        "Не выбраны все подтверждающие документы и/или количества не сходятся (в сумме не 0)",
+        "Не заполнено поле ФИО",
+        "Нет остатка у получателя",
+        "Неверный часовой пояс"
+      ], correct: 0
+    },
+    { id: 8, text: "Какие причины обычно НЕ требуют подтверждающий документ?",
+      options: [
+        "Микс / Не погружен на отправителе / Вернулся отправителю / Лишний товар",
+        "Только «Выгружен на другом филиале»",
+        "Любые причины всегда требуют подтверждающий документ",
+        "Только «Недоезд»"
+      ], correct: 0
+    },
+    { id: 9, text: "Что создается автоматически при подтверждении причин (микс/не погружен/вернулся/лишний)?",
+      options: [
+        "Документ «Инвентаризация» (и документ подтверждения листа разногласий)",
+        "Заявка на закупку",
+        "Перемещение между складами",
+        "Списание уценки"
+      ], correct: 0
+    },
+    { id: 10, text: "Почему удаление/отмена «Инвентаризации» может быть ограничена и что делать при необходимости отмены?",
+      options: [
+        "Документ влияет на учет/обмен; действовать через инцидент в поддержку",
+        "Можно удалить всегда без последствий",
+        "Нужно просто перезайти в 1С",
+        "Достаточно очистить кэш"
+      ], correct: 0
+    },
+    { id: 11, text: "Кейс: сотрудник создал лист разногласий ошибочно, фактического расхождения нет. Как закрыть корректно?",
+      options: [
+        "Создать сторнирование на основании документа «Разногласие» (делает инициатор)",
+        "Списать товар уценкой",
+        "Создать продажу на 1 рубль",
+        "Удалить документ разногласия вручную"
+      ], correct: 0
+    },
+    { id: 12, text: "Что обязательно должно быть заполнено перед нажатием «Подтвердить отмеченные»?",
+      options: [
+        "Подтверждено и Причина (и подтверждающий документ — если требуется по причине)",
+        "Только Остаток",
+        "Только Комментарий",
+        "Только Отправитель"
+      ], correct: 0
+    },
+    { id: 13, text: "Для чего руководителю важно контролировать поле «Подтверждено»?",
+      options: [
+        "Это факт, который влияет на закрытие расхождения и корректность учета",
+        "Это справочное поле и ни на что не влияет",
+        "Это поле для красоты",
+        "Это поле для печати ценников"
+      ], correct: 0
+    },
+    { id: 14, text: "Как корректно выбирается причина в 1С?",
+      options: [
+        "Двойной клик по ячейке → выбор из списка",
+        "Только через администратора",
+        "Причина проставляется автоматически и не меняется",
+        "Только через письмо в бухгалтерию"
+      ], correct: 0
+    },
+    { id: 15, text: "Что означает колонка «Остаток» и зачем руководителю ее смотреть?",
+      options: [
+        "Учетный остаток у отправителя; помогает выявлять системные расхождения/ошибки отгрузки",
+        "Остаток времени смены",
+        "Остаток лимита ФОТ",
+        "Остаток бюджета маркетинга"
+      ], correct: 0
+    },
+    { id: 16, text: "Кейс: в «Заявлено» по товару +1 (лишний). Какое базовое действие должно быть в обработке?",
+      options: [
+        "Выбрать причину (например «Лишний товар») и подтвердить корректное количество",
+        "Списать товар сразу без документов",
+        "Поставить 0 и закрыть окно",
+        "Сделать возврат покупателя"
+      ], correct: 0
+    },
+    { id: 17, text: "Какой механизм закрывает лист разногласий при подтверждении?",
+      options: [
+        "Создается документ листа разногласий с операцией «Подтверждение»",
+        "Автоматически закрывается при выходе из 1С",
+        "Закрывает кассир при Z-отчете",
+        "Закрывает поставщик"
+      ], correct: 0
+    },
+    { id: 18, text: "Что лучше всего писать в «Комментарий подтверждающего» (управленческий стандарт)?",
+      options: [
+        "Коротко: причина, что сделали, ссылка/номер связанного документа при необходимости",
+        "Любой текст, можно без смысла",
+        "Только смайлики",
+        "Ничего — не заполняем"
+      ], correct: 0
+    },
+    { id: 19, text: "Кейс: у двух листов разногласий общий товар, но количества не сходятся. Что правильно сделать?",
+      options: [
+        "Исправить подтвержденные количества/подбор подтверждающих документов до баланса",
+        "Подтвердить как есть, система потом поправит",
+        "Удалить один лист разногласий",
+        "Списать разницу уценкой"
+      ], correct: 0
+    },
+    { id: 20, text: "Что показывает «Комментарий заявителя» и зачем его читать руководителю?",
+      options: [
+        "Описание проблемы от инициатора; помогает понять контекст и выбрать верное действие",
+        "Это рекламный текст",
+        "Это поле не связано с документом",
+        "Это лог работы кассы"
+      ], correct: 0
+    },
+    { id: 21, text: "Кейс: сотрудник ставит неверные причины, чтобы быстрее закрыть. Какой риск основной?",
+      options: [
+        "Искажение учета и неверные управленческие выводы по причинам потерь/ошибок",
+        "Никакого — все равно одинаково",
+        "Только падение скорости печати",
+        "Только изменение интерфейса"
+      ], correct: 0
+    },
+    { id: 22, text: "Что должен сделать руководитель, если видит массовые «Выгружен на другом филиале»?",
+      options: [
+        "Проверить дисциплину отгрузки/маршрутизацию и корректность связки подтверждающих документов",
+        "Игнорировать — само пройдет",
+        "Отключить обработку",
+        "Запретить приемку"
+      ], correct: 0
+    },
+    { id: 23, text: "Какой из вариантов — лучший управленческий KPI по качеству обработки расхождений?",
+      options: [
+        "Доля закрытых расхождений в срок + минимизация сторно/ошибочных причин",
+        "Количество комментариев в день",
+        "Количество запусков 1С",
+        "Количество печатей документов"
+      ], correct: 0
+    },
+    { id: 24, text: "Кейс: нужно обучить смену. Какие 2 пункта — обязательный минимум?",
+      options: [
+        "Правильный выбор причины + корректное заполнение подтверждено/подтверждающего документа",
+        "Только скорость приема товара",
+        "Только знание ассортимента",
+        "Только умение печатать ценники"
+      ], correct: 0
+    },
+    { id: 25, text: "Кто должен создавать сторнирование при ошибочно созданном разногласии?",
+      options: [
+        "Филиал-инициатор разногласия",
+        "Любой сотрудник, кто увидел ошибку",
+        "Только поставщик",
+        "Только бухгалтерия"
+      ], correct: 0
+    }
+  ];
+
+  let startedAt = Date.now();
+
+  function render() {
+    const root = document.getElementById('quiz');
+    root.innerHTML = QUESTIONS.map((q, idx) => `
+      <div class="q" data-qid="${q.id}">
+        <div class="q-title">${idx+1}. ${q.text}</div>
+        ${q.options.map((opt, oi) => `
+          <label class="opt">
+            <input type="radio" name="q_${q.id}" value="${oi}" />
+            ${opt}
+          </label>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+
+  function getAnswers() {
+    const answers = {};
+    for (const q of QUESTIONS) {
+      const sel = document.querySelector(\`input[name="q_\${q.id}"]:checked\`);
+      answers[q.id] = sel ? Number(sel.value) : null;
+    }
+    return answers;
+  }
+
+  function grade(answers) {
+    let score = 0;
+    for (const q of QUESTIONS) if (answers[q.id] === q.correct) score++;
+    return score;
+  }
+
+  function validateMeta() {
+    const name = document.getElementById('name').value.trim();
+    const role = document.getElementById('role').value.trim();
+    if (!name) return { ok:false, msg: "Заполни ФИО." };
+    if (!role) return { ok:false, msg: "Выбери роль." };
+    return { ok:true, name, role };
+  }
+
+  function unansweredCount(answers) {
+    return Object.values(answers).filter(v => v === null).length;
+  }
+
+  function setStatus(msg, isError=false) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.style.color = isError ? "#b00020" : "#111";
+  }
+
+  function showResult(score, total, durationSec, saved=false) {
+    const box = document.getElementById('resultBox');
+    const percent = Math.round((score/total)*100);
+    const pass = percent >= 80; // порог можно поменять
+    box.classList.remove('hidden');
+    box.innerHTML = `
+      <div><b>Результат:</b> ${score} / ${total} (${percent}%)</div>
+      <div><b>Статус:</b> ${pass ? "СДАН" : "НЕ СДАН"}</div>
+      <div class="muted">Время: ${durationSec} сек. ${saved ? "(сохранено)" : ""}</div>
+    `;
+  }
+
+  async function submit() {
+    const meta = validateMeta();
+    if (!meta.ok) return setStatus(meta.msg, true);
+
+    const answers = getAnswers();
+    const miss = unansweredCount(answers);
+    if (miss > 0) return setStatus(\`Нужно ответить на все вопросы. Не отвечено: \${miss}\`, true);
+
+    const score = grade(answers);
+    const total = QUESTIONS.length;
+    const durationSec = Math.round((Date.now() - startedAt) / 1000);
+
+    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+      return setStatus("Не задан SCRIPT_URL. Вставь URL веб-приложения Apps Script.", true);
+    }
+
+    const payload = {
+      testType: TEST_TYPE,
+      name: meta.name,
+      role: meta.role,
+      score,
+      total,
+      durationSec,
+      userAgent: navigator.userAgent,
+      answers
+    };
+
+    setStatus("Отправляю результат…");
+    const resp = await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+
+    const text = await resp.text();
+    let json;
+    try { json = JSON.parse(text); } catch { json = { ok:false, error:text }; }
+
+    if (json.ok) {
+      showResult(score, total, durationSec, true);
+      setStatus("Готово! Результат сохранён.", false);
+    } else {
+      setStatus("Ошибка сохранения: " + (json.error || "unknown"), true);
+    }
+  }
+
+  function resetAll() {
+    document.querySelectorAll('input[type="radio"]').forEach(i => i.checked = false);
+    document.getElementById('resultBox').classList.add('hidden');
+    setStatus("Сброшено.");
+    startedAt = Date.now();
+  }
+
+  document.getElementById('btnCheck').addEventListener('click', () => {
+    const meta = validateMeta();
+    if (!meta.ok) return setStatus(meta.msg, true);
+
+    const answers = getAnswers();
+    const miss = unansweredCount(answers);
+    if (miss > 0) return setStatus(`Нужно ответить на все вопросы. Не отвечено: ${miss}`, true);
+
+    const score = grade(answers);
+    const durationSec = Math.round((Date.now() - startedAt) / 1000);
+    showResult(score, QUESTIONS.length, durationSec, false);
+    setStatus("Проверено локально (без сохранения).");
+  });
+
+  document.getElementById('btnSubmit').addEventListener('click', submit);
+  document.getElementById('btnReset').addEventListener('click', resetAll);
+
+  render();
+</script>
+</body>
+</html>
