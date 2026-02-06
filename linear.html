@@ -2,63 +2,215 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Тест (Линейный): Расхождения при приеме товара (1С)</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.35; }
-    .card { max-width: 980px; margin: 0 auto; border: 1px solid #ddd; border-radius: 12px; padding: 18px; }
-    h1 { font-size: 20px; margin: 0 0 10px; }
-    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 18px; }
-    input, select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
-    .q { padding: 14px 0; border-top: 1px solid #eee; }
-    .q:first-of-type { border-top: none; }
-    .q-title { font-weight: 700; margin: 0 0 10px; }
-    .opt { display: block; padding: 8px 10px; border: 1px solid #eee; border-radius: 10px; margin: 8px 0; cursor: pointer; }
-    .opt:hover { background: #fafafa; }
-    .actions { display:flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #ccc; background: white; cursor: pointer; }
-    button.primary { background: #111; color: #fff; border-color: #111; }
-    .status { margin-top: 12px; font-size: 14px; }
-    .muted { color:#666; }
-    .hidden { display:none; }
-    .result { padding: 12px; border-radius: 12px; background:#f7f7f7; margin-top: 14px; }
-    .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; background:#eee; font-size: 12px; margin-left: 8px; }
+    :root{
+      --bg:#0f0f10;
+      --card:#141416;
+      --card2:#18181b;
+      --text:#f4f4f5;
+      --muted:#a1a1aa;
+      --line:#2a2a2f;
+      --orange:#ff7a18;
+      --orange2:#ff9a4a;
+      --good:#22c55e;
+      --bad:#ef4444;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Inter, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 20% -10%, rgba(255,122,24,.22), transparent 60%),
+                  radial-gradient(900px 700px at 100% 0%, rgba(255,154,74,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.35;
+    }
+    .wrap{max-width:1020px;margin:24px auto;padding:0 14px}
+    .topbar{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      margin-bottom:14px;
+    }
+    .brand{
+      display:flex; gap:10px; align-items:center;
+    }
+    .logo{
+      width:34px;height:34px;border-radius:10px;
+      background: linear-gradient(135deg,var(--orange),var(--orange2));
+      box-shadow: 0 10px 30px rgba(255,122,24,.25);
+    }
+    .titleblock h1{font-size:18px;margin:0}
+    .titleblock .sub{color:var(--muted);font-size:13px;margin-top:2px}
+    .pill{
+      padding:6px 10px;border:1px solid rgba(255,122,24,.35);
+      background: rgba(255,122,24,.08);
+      color: var(--orange2);
+      border-radius:999px;font-size:12px;white-space:nowrap;
+    }
+
+    .card{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 35%),
+                  var(--card);
+      border-radius:16px;
+      padding:16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.35);
+    }
+    .meta{
+      display:grid;
+      grid-template-columns: 1fr 260px;
+      gap:12px;
+      margin-top:12px;
+      margin-bottom:14px;
+    }
+    label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+    input, select{
+      width:100%;
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background: var(--card2);
+      color: var(--text);
+      outline:none;
+    }
+    input:focus, select:focus{
+      border-color: rgba(255,122,24,.6);
+      box-shadow: 0 0 0 3px rgba(255,122,24,.18);
+    }
+
+    .q{
+      border-top:1px solid var(--line);
+      padding:14px 2px;
+    }
+    .q:first-of-type{border-top:none}
+    .q-head{
+      display:flex; gap:10px; align-items:flex-start; justify-content:space-between;
+      margin-bottom:10px;
+    }
+    .q-num{
+      min-width:34px;height:34px;border-radius:12px;
+      background: rgba(255,122,24,.12);
+      border:1px solid rgba(255,122,24,.35);
+      color: var(--orange2);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;
+    }
+    .q-title{font-weight:700;margin:0}
+    .opts{margin-top:8px}
+    .opt{
+      display:flex; gap:10px; align-items:flex-start;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      border-radius:14px;
+      margin:8px 0;
+      cursor:pointer;
+      transition: transform .05s ease, border-color .15s ease, background .15s ease;
+    }
+    .opt:hover{
+      border-color: rgba(255,122,24,.45);
+      background: rgba(255,122,24,.06);
+    }
+    .opt input{margin-top:2px}
+    .actions{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:14px;
+    }
+    button{
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background: var(--card2);
+      color: var(--text);
+      cursor:pointer;
+    }
+    button:hover{border-color: rgba(255,122,24,.45)}
+    button.primary{
+      border-color: rgba(255,122,24,.7);
+      background: linear-gradient(135deg, rgba(255,122,24,.95), rgba(255,154,74,.9));
+      color:#111;
+      font-weight:800;
+    }
+    .status{margin-top:12px;font-size:13px;color:var(--muted)}
+    .result{
+      margin-top:12px;
+      padding:12px 14px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      border-radius:14px;
+    }
+    .result .big{font-size:16px;font-weight:800;margin-bottom:6px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .tag{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;border:1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      font-size:12px;color:var(--muted);
+    }
+    .tag.good{border-color: rgba(34,197,94,.45); color: #a7f3d0; background: rgba(34,197,94,.08)}
+    .tag.bad{border-color: rgba(239,68,68,.45); color: #fecaca; background: rgba(239,68,68,.08)}
+    .congrats{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,122,24,.45);
+      background: rgba(255,122,24,.10);
+      color: #ffd7b5;
+      font-weight:700;
+    }
+    @media (max-width:720px){
+      .meta{grid-template-columns:1fr}
+      .pill{display:none}
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Тест (Линейный) <span class="badge">25 вопросов</span></h1>
-    <div class="muted">Ответьте на все вопросы и нажмите «Отправить результат». Итоги сохраняются в таблицу.</div>
-
-    <div class="meta">
-      <div>
-        <label>ФИО</label>
-        <input id="name" placeholder="Например: Иванов Иван" />
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="titleblock">
+          <h1>Тест (Линейный): Расхождения при приеме товара (1С)</h1>
+          <div class="sub">Варианты ответов перемешиваются при каждом открытии. Результаты сохраняются в Google Sheet.</div>
+        </div>
       </div>
-      <div>
-        <label>Роль</label>
-        <select id="role">
-          <option value="">Выберите…</option>
-          <option>Линейный сотрудник</option>
-        </select>
-      </div>
+      <div class="pill">25 вопросов • порог “СДАН” = 80%</div>
     </div>
 
-    <div id="quiz"></div>
+    <div class="card">
+      <div class="meta">
+        <div>
+          <label>ФИО</label>
+          <input id="name" placeholder="Например: Иванов Иван" />
+        </div>
+        <div>
+          <label>Роль</label>
+          <select id="role">
+            <option value="">Выберите…</option>
+            <option>Линейный сотрудник</option>
+          </select>
+        </div>
+      </div>
 
-    <div class="actions">
-      <button id="btnCheck">Проверить (локально)</button>
-      <button class="primary" id="btnSubmit">Отправить результат</button>
-      <button id="btnReset">Сбросить</button>
+      <div id="quiz"></div>
+
+      <div class="actions">
+        <button id="btnCheck">Проверить (локально)</button>
+        <button class="primary" id="btnSubmit">Отправить результат</button>
+        <button id="btnReset">Сбросить</button>
+      </div>
+
+      <div class="status" id="status"></div>
+      <div class="result" id="resultBox" style="display:none"></div>
     </div>
-
-    <div class="status" id="status"></div>
-    <div class="result hidden" id="resultBox"></div>
   </div>
 
 <script>
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbziYMZkxWnhZiAiHkPr4-TidgzpyR0y5V9ToVXus-CnQfSD_qKGXWCHGDHRK55Fyl-W/exec";
   const TEST_TYPE = "LINEAR";
+  const PASS_PERCENT = 80;
+  const CONGRATS_PERCENT = 90; // поздравляем, если > 90%
 
   const QUESTIONS = [
     { id: 1, text: "Где в 1С находится «Обработка расхождений при приеме товара»?",
@@ -263,26 +415,53 @@
     }
   ];
 
+  // --- Перемешивание вариантов ответа (с сохранением правильного) ---
+  function shuffleWithCorrect(options, correctIndex) {
+    const arr = options.map((text, i) => ({ text, isCorrect: i === correctIndex }));
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return {
+      newOptions: arr.map(x => x.text),
+      newCorrect: arr.findIndex(x => x.isCorrect),
+    };
+  }
+
+  const QUESTIONS_SHUFFLED = QUESTIONS.map(q => {
+    const { newOptions, newCorrect } = shuffleWithCorrect(q.options, q.correct);
+    return { ...q, options: newOptions, correct: newCorrect };
+  });
+
   let startedAt = Date.now();
 
   function render() {
     const root = document.getElementById('quiz');
-    root.innerHTML = QUESTIONS.map((q, idx) => `
+    root.innerHTML = QUESTIONS_SHUFFLED.map((q, idx) => `
       <div class="q" data-qid="${q.id}">
-        <div class="q-title">${idx+1}. ${q.text}</div>
-        ${q.options.map((opt, oi) => `
-          <label class="opt">
-            <input type="radio" name="q_${q.id}" value="${oi}" />
-            ${opt}
-          </label>
-        `).join('')}
+        <div class="q-head">
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div class="q-num">${idx + 1}</div>
+            <div>
+              <div class="q-title">${q.text}</div>
+              <div class="opts">
+                ${q.options.map((opt, oi) => `
+                  <label class="opt">
+                    <input type="radio" name="q_${q.id}" value="${oi}">
+                    <div>${opt}</div>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     `).join('');
   }
 
   function getAnswers() {
     const answers = {};
-    for (const q of QUESTIONS) {
+    for (const q of QUESTIONS_SHUFFLED) {
       const sel = document.querySelector(`input[name="q_${q.id}"]:checked`);
       answers[q.id] = sel ? Number(sel.value) : null;
     }
@@ -291,37 +470,44 @@
 
   function grade(answers) {
     let score = 0;
-    for (const q of QUESTIONS) if (answers[q.id] === q.correct) score++;
+    for (const q of QUESTIONS_SHUFFLED) {
+      if (answers[q.id] === q.correct) score++;
+    }
     return score;
-  }
-
-  function validateMeta() {
-    const name = document.getElementById('name').value.trim();
-    const role = document.getElementById('role').value.trim();
-    if (!name) return { ok:false, msg: "Заполни ФИО." };
-    if (!role) return { ok:false, msg: "Выбери роль." };
-    return { ok:true, name, role };
   }
 
   function unansweredCount(answers) {
     return Object.values(answers).filter(v => v === null).length;
   }
 
+  function validateMeta() {
+    const name = document.getElementById('name').value.trim();
+    const role = document.getElementById('role').value.trim();
+    if (!name) return { ok:false, msg:"Заполни ФИО." };
+    if (!role) return { ok:false, msg:"Выбери роль." };
+    return { ok:true, name, role };
+  }
+
   function setStatus(msg, isError=false) {
     const el = document.getElementById('status');
     el.textContent = msg;
-    el.style.color = isError ? "#b00020" : "#111";
+    el.style.color = isError ? "#fecaca" : "#a1a1aa";
   }
 
   function showResult(score, total, durationSec, saved=false) {
     const box = document.getElementById('resultBox');
-    const percent = Math.round((score/total)*100);
-    const pass = percent >= 80; // порог можно поменять
-    box.classList.remove('hidden');
+    const percent = Math.round((score / total) * 100);
+    const pass = percent >= PASS_PERCENT;
+
+    box.style.display = "block";
     box.innerHTML = `
-      <div><b>Результат:</b> ${score} / ${total} (${percent}%)</div>
-      <div><b>Статус:</b> ${pass ? "СДАН" : "НЕ СДАН"}</div>
-      <div class="muted">Время: ${durationSec} сек. ${saved ? "(сохранено)" : ""}</div>
+      <div class="big">Результат: ${score} / ${total} (${percent}%)</div>
+      <div class="row">
+        <div class="tag ${pass ? 'good' : 'bad'}"><b>Статус:</b>&nbsp;${pass ? "СДАН" : "НЕ СДАН"}</div>
+        <div class="tag"><b>Время:</b>&nbsp;${durationSec} сек</div>
+        <div class="tag"><b>Сохранение:</b>&nbsp;${saved ? "да" : "нет"}</div>
+      </div>
+      ${percent > CONGRATS_PERCENT ? `<div class="congrats">🎉 Поздравляем! Отличный результат — выше 90%! Так держать!</div>` : ``}
     `;
   }
 
@@ -334,7 +520,7 @@
     if (miss > 0) return setStatus(`Нужно ответить на все вопросы. Не отвечено: ${miss}`, true);
 
     const score = grade(answers);
-    const total = QUESTIONS.length;
+    const total = QUESTIONS_SHUFFLED.length;
     const durationSec = Math.round((Date.now() - startedAt) / 1000);
 
     const payload = {
@@ -349,28 +535,35 @@
     };
 
     setStatus("Отправляю результат…");
-    const resp = await fetch(SCRIPT_URL, {
-      method: "POST",
-      mode: "cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
 
-    const text = await resp.text();
-    let json;
-    try { json = JSON.parse(text); } catch { json = { ok:false, error:text }; }
+    try {
+      const resp = await fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
 
-    if (json.ok) {
-      showResult(score, total, durationSec, true);
-      setStatus("Готово! Результат сохранён.", false);
-    } else {
-      setStatus("Ошибка сохранения: " + (json.error || "unknown"), true);
+      const text = await resp.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = { ok:false, error:text }; }
+
+      if (json.ok) {
+        showResult(score, total, durationSec, true);
+        setStatus("Готово! Результат сохранён.", false);
+      } else {
+        showResult(score, total, durationSec, false);
+        setStatus("Ошибка сохранения: " + (json.error || "unknown"), true);
+      }
+    } catch (e) {
+      showResult(score, total, durationSec, false);
+      setStatus("Ошибка сети/доступа. Проверь, что Apps Script развернут как Web App и доступ = Anyone.", true);
     }
   }
 
   function resetAll() {
     document.querySelectorAll('input[type="radio"]').forEach(i => i.checked = false);
-    document.getElementById('resultBox').classList.add('hidden');
+    document.getElementById('resultBox').style.display = "none";
     setStatus("Сброшено.");
     startedAt = Date.now();
   }
@@ -384,8 +577,9 @@
     if (miss > 0) return setStatus(`Нужно ответить на все вопросы. Не отвечено: ${miss}`, true);
 
     const score = grade(answers);
+    const total = QUESTIONS_SHUFFLED.length;
     const durationSec = Math.round((Date.now() - startedAt) / 1000);
-    showResult(score, QUESTIONS.length, durationSec, false);
+    showResult(score, total, durationSec, false);
     setStatus("Проверено локально (без сохранения).");
   });
 
