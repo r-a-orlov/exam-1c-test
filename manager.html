@@ -222,4 +222,177 @@
       ], correct: 0
     },
     { id: 21, text: "Риск неверных причин ради «скорости закрытия» — это…",
-      options
+      options: [
+        "Искажение учета и неверные управленческие выводы по причинам потерь/ошибок",
+        "Никакого — все равно одинаково",
+        "Только падение скорости печати",
+        "Только изменение интерфейса"
+      ], correct: 0
+    },
+    { id: 22, text: "Если вы видите массовые «Выгружен на другом филиале», что делать правильно?",
+      options: [
+        "Проверить дисциплину отгрузки/маршрутизацию и корректность связки подтверждающих документов",
+        "Игнорировать — само пройдет",
+        "Отключить обработку",
+        "Запретить приемку"
+      ], correct: 0
+    },
+    { id: 23, text: "Какой KPI лучше отражает качество обработки расхождений?",
+      options: [
+        "Доля закрытых расхождений в срок + минимум ошибочных причин/сторно",
+        "Количество комментариев в день",
+        "Количество запусков 1С",
+        "Количество печатей документов"
+      ], correct: 0
+    },
+    { id: 24, text: "Для обучения смены какие 2 пункта — обязательный минимум?",
+      options: [
+        "Правильный выбор причины + корректное заполнение подтверждено/подтверждающего документа",
+        "Только скорость приемки",
+        "Только знание ассортимента",
+        "Только печать ценников"
+      ], correct: 0
+    },
+    { id: 25, text: "Кто должен создавать сторнирование при ошибочно созданном разногласии?",
+      options: [
+        "Филиал-инициатор разногласия",
+        "Любой сотрудник, кто заметил",
+        "Только поставщик",
+        "Только бухгалтерия"
+      ], correct: 0
+    }
+  ];
+
+  let startedAt = Date.now();
+
+  function render() {
+    const root = document.getElementById('quiz');
+    root.innerHTML = QUESTIONS.map((q, idx) => `
+      <div class="q" data-qid="${q.id}">
+        <div class="q-title">${idx+1}. ${q.text}</div>
+        ${q.options.map((opt, oi) => `
+          <label class="opt">
+            <input type="radio" name="q_${q.id}" value="${oi}" />
+            ${opt}
+          </label>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+
+  function getAnswers() {
+    const answers = {};
+    for (const q of QUESTIONS) {
+      const sel = document.querySelector(`input[name="q_${q.id}"]:checked`);
+      answers[q.id] = sel ? Number(sel.value) : null;
+    }
+    return answers;
+  }
+
+  function grade(answers) {
+    let score = 0;
+    for (const q of QUESTIONS) if (answers[q.id] === q.correct) score++;
+    return score;
+  }
+
+  function validateMeta() {
+    const name = document.getElementById('name').value.trim();
+    const role = document.getElementById('role').value.trim();
+    if (!name) return { ok:false, msg: "Заполни ФИО." };
+    if (!role) return { ok:false, msg: "Выбери роль." };
+    return { ok:true, name, role };
+  }
+
+  function unansweredCount(answers) {
+    return Object.values(answers).filter(v => v === null).length;
+  }
+
+  function setStatus(msg, isError=false) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.style.color = isError ? "#b00020" : "#111";
+  }
+
+  function showResult(score, total, durationSec, saved=false) {
+    const box = document.getElementById('resultBox');
+    const percent = Math.round((score/total)*100);
+    const pass = percent >= 80; // порог сдачи можно поменять
+    box.classList.remove('hidden');
+    box.innerHTML = `
+      <div><b>Результат:</b> ${score} / ${total} (${percent}%)</div>
+      <div><b>Статус:</b> ${pass ? "СДАН" : "НЕ СДАН"}</div>
+      <div class="muted">Время: ${durationSec} сек. ${saved ? "(сохранено)" : ""}</div>
+    `;
+  }
+
+  async function submit() {
+    const meta = validateMeta();
+    if (!meta.ok) return setStatus(meta.msg, true);
+
+    const answers = getAnswers();
+    const miss = unansweredCount(answers);
+    if (miss > 0) return setStatus(`Нужно ответить на все вопросы. Не отвечено: ${miss}`, true);
+
+    const score = grade(answers);
+    const total = QUESTIONS.length;
+    const durationSec = Math.round((Date.now() - startedAt) / 1000);
+
+    const payload = {
+      testType: TEST_TYPE,
+      name: meta.name,
+      role: meta.role,
+      score,
+      total,
+      durationSec,
+      userAgent: navigator.userAgent,
+      answers
+    };
+
+    setStatus("Отправляю результат…");
+    const resp = await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+
+    const text = await resp.text();
+    let json;
+    try { json = JSON.parse(text); } catch { json = { ok:false, error:text }; }
+
+    if (json.ok) {
+      showResult(score, total, durationSec, true);
+      setStatus("Готово! Результат сохранён.", false);
+    } else {
+      setStatus("Ошибка сохранения: " + (json.error || "unknown"), true);
+    }
+  }
+
+  function resetAll() {
+    document.querySelectorAll('input[type="radio"]').forEach(i => i.checked = false);
+    document.getElementById('resultBox').classList.add('hidden');
+    setStatus("Сброшено.");
+    startedAt = Date.now();
+  }
+
+  document.getElementById('btnCheck').addEventListener('click', () => {
+    const meta = validateMeta();
+    if (!meta.ok) return setStatus(meta.msg, true);
+
+    const answers = getAnswers();
+    const miss = unansweredCount(answers);
+    if (miss > 0) return setStatus(`Нужно ответить на все вопросы. Не отвечено: ${miss}`, true);
+
+    const score = grade(answers);
+    const durationSec = Math.round((Date.now() - startedAt) / 1000);
+    showResult(score, QUESTIONS.length, durationSec, false);
+    setStatus("Проверено локально (без сохранения).");
+  });
+
+  document.getElementById('btnSubmit').addEventListener('click', submit);
+  document.getElementById('btnReset').addEventListener('click', resetAll);
+
+  render();
+</script>
+</body>
+</html>
