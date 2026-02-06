@@ -283,7 +283,7 @@
   function getAnswers() {
     const answers = {};
     for (const q of QUESTIONS) {
-      const sel = document.querySelector(\`input[name="q_\${q.id}"]:checked\`);
+      const sel = document.querySelector(`input[name="q_${q.id}"]:checked`);
       answers[q.id] = sel ? Number(sel.value) : null;
     }
     return answers;
@@ -331,15 +331,11 @@
 
     const answers = getAnswers();
     const miss = unansweredCount(answers);
-    if (miss > 0) return setStatus(\`Нужно ответить на все вопросы. Не отвечено: \${miss}\`, true);
+    if (miss > 0) return setStatus(`Нужно ответить на все вопросы. Не отвечено: ${miss}`, true);
 
     const score = grade(answers);
     const total = QUESTIONS.length;
     const durationSec = Math.round((Date.now() - startedAt) / 1000);
-
-    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
-      return setStatus("Не задан SCRIPT_URL. Вставь URL веб-приложения Apps Script.", true);
-    }
 
     const payload = {
       testType: TEST_TYPE,
