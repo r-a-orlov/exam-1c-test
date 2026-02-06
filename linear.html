@@ -537,12 +537,15 @@
     setStatus("Отправляю результат…");
 
     try {
-      const resp = await fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
+const body = new URLSearchParams();
+body.set("payload", JSON.stringify(payload));
+
+const resp = await fetch("https://script.google.com/macros/s/AKfycbytNX7bZYfX85-GOHhHKkSYUoRiQxXoDP0NKZ5Dk6_KX78VtbnfOWSjf-relgYb0g0/exec", {
+  method: "POST",
+  mode: "cors",
+  body
+});
+
 
       const text = await resp.text();
       let json;
